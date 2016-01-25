@@ -5,11 +5,11 @@ from django.db import models, connection
 class SearchQuerySet(models.query.QuerySet):
     ''' QuerySet which supports MySQL and MariaDB full-text search. '''
 
-    def __init__(self, fields=None, model=None, query=None, using=None, hints=None):
-        super(SearchQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-        self._search_fields = fields
+    def __init__(self, fields=None, **kwargs):
+        super(SearchQuerySet, self).__init__(**kwargs)
+        self.search_fields = fields
 
-    def search(self, query):
+    def search(self, query, fields=None):
         ''' Runs a fulltext search against the fields defined in the constructor. '''
 
         #
@@ -30,7 +30,9 @@ class SearchQuerySet(models.query.QuerySet):
         # are stored in the related model itself.
         #
 
-        for field in self._search_fields:
+        fields = self.search_fields if fields == None else fields
+
+        for field in fields:
 
             # Handling fields with a related model.
             if seperator in field:
@@ -54,7 +56,7 @@ class SearchQuerySet(models.query.QuerySet):
         where_expression = ('MATCH({}) AGAINST("%s" IN BOOLEAN MODE)'.format(fulltext_columns))
 
         # Get queryset via extra() method.
-        queryset = self.extra(where=[match_expr], params=[query])
+        queryset = self.extra(where=[where_expression], params=[query])
 
         #
         # If related fields were involved we've to select them as well.
@@ -84,14 +86,15 @@ class SearchQuerySet(models.query.QuerySet):
 class SearchManager(models.Manager):
     ''' SearchManager which supports MySQL and MariaDB full-text search. '''
 
-    def __init__(self, fields):
+    def __init__(self, fields=None):
         super(SearchManager, self).__init__()
-        self._search_fields = fields
+        self.search_fields = fields
 
     def get_query_set(self):
         ''' Returns the queryset. '''
-        return SearchQuerySet(model=self.model, fields=self._search_fields)
+        return SearchQuerySet(model=self.model, fields=self.search_fields)
 
-    def search(self, query):
+    def search(self, query, fields=None):
         ''' Runs a fulltext search against the fields defined in the constructor. '''
-        return self.get_query_set().search(query)
+        return self.get_query_set().search(query, fields)
+
