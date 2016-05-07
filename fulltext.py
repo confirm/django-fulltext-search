@@ -9,7 +9,7 @@ class SearchQuerySet(models.query.QuerySet):
         super(SearchQuerySet, self).__init__(**kwargs)
         self.search_fields = fields
 
-    def search(self, query, fields=None):
+    def search(self, query, fields=None, boolean_mode='auto'):
         ''' Runs a fulltext search against the fields defined in the constructor. '''
 
         #
@@ -51,9 +51,23 @@ class SearchQuerySet(models.query.QuerySet):
             # Add field with `table`.`column` style to columns set.
             columns.add('{}.{}'.format(quote_name(table), quote_name(column)))
 
+        #
+        # We now have all the required informations to build the query with the
+        # fulltext "MATCH(…) AGAINST(…)" WHERE statement. However, if the
+        # boolean_mode is set to "auto", we need to inspect the search query
+        # and enable it in case any operators were found. This is also a
+        # workaround for using at-signs (@) in search queries, because we don't
+        # enable the boolean mode in case no other operator was found.
+        #
+
+        # Prepare the "IN BOOLEAN MODE" statement.
+        if boolean_mode.lower() == 'auto':
+            boolean_mode = any(x in query for x in '+-><()*"')
+        boolean_statement = ' IN BOOLEAN MODE' if boolean_mode else ''
+
         # Create the WHERE MATCH() ... AGAINST() expression.
         fulltext_columns = ', '.join(columns)
-        where_expression = ('MATCH({}) AGAINST("%s" IN BOOLEAN MODE)'.format(fulltext_columns))
+        where_expression = ('MATCH({}) AGAINST("%s"{})'.format(fulltext_columns, boolean_statement))
 
         # Get queryset via extra() method.
         queryset = self.extra(where=[where_expression], params=[query])
@@ -97,4 +111,3 @@ class SearchManager(models.Manager):
     def search(self, query, fields=None):
         ''' Runs a fulltext search against the fields defined in the constructor. '''
         return self.get_query_set().search(query, fields)
-

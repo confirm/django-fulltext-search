@@ -61,7 +61,7 @@ class Customer(models.Model):
     # more fields...
 ```
 
-As you can see, you can create the `SearchManager()` with a **list of by default searchable fields**. This means you don't have to bother about the field names later when you search your model. However, if you don't want to specify default fields you can also create the `SearchManager()` object without any attributes:
+As you can see, you can create the `SearchManager()` with a **list of by default searchable fields**. This means you don't have to bother about the field names later when you search your model. However, if you don't want to specify default fields you can also create the `SearchManager()` object without any arguments:
 
 ```python
 objects = SearchManager()
@@ -70,7 +70,8 @@ objects = SearchManager()
 Search
 ------
 
-The library currently supports [boolean full-text seaches](https://dev.mysql.com/doc/refman/5.6/en/fulltext-boolean.html) by default.
+The library currently supports [boolean full-text seaches](https://dev.mysql.com/doc/refman/5.6/en/fulltext-boolean.html) by default if you use one of the operators (`+ - > < ( ) * "`) in your search query. Please note that the at-operator (`@`) will not enable the boolean search mode, which means you can also search for mail addresses, as long as you don't include any other operator in your search query.
+
 To search your model use the new `search()` method of the models' queryset:
 
 ```python
@@ -82,6 +83,12 @@ This only works if you've defined default fields in the constructor of the `Sear
 ```python
 Customer.objects.search('John*', ['first_name', 'last_name'])
 ```
+
+The search method can also be called with keyword arguments:
+
+* `query`: The search query itself
+* `fields`: A list of fields (*optional, default are the fields defined in the `SearchManager()`*)
+* `boolean_mode`: Disable or enable boolean mode manually (*optional, default is `"auto"` which will enable boolean mode when an operator is used*)
 
 **IMPORTANT:** Please remember you've to create a full-text index for the defined fields before you can search them.
 
