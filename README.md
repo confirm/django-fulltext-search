@@ -87,8 +87,13 @@ Customer.objects.search('John*', ['first_name', 'last_name'])
 The search method can also be called with keyword arguments:
 
 * `query`: The search query itself
-* `fields`: A list of fields (*optional, default are the fields defined in the `SearchManager()`*)
-* `boolean_mode`: Disable or enable boolean mode manually (*optional, default is `"auto"` which will enable boolean mode when an operator is used*)
+* `fields`: A list of fields
+    * _optional_
+    * _default are the fields defined in the `SearchManager()`_
+* `mode`: Sets the search mode
+    * _optional_
+    * _default is `AUTO` which will enable `BOOLEAN` mode when a boolean operator is found in the `query`_
+    * _can be set to a valid search mode, e.g. `BOOLEAN` or `NATURAL LANGUAGE`_
 
 **IMPORTANT:** Please remember you've to create a full-text index for the defined fields before you can search them.
 
