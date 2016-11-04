@@ -11,14 +11,25 @@ class SearchQuerySet(models.query.QuerySet):
         super(SearchQuerySet, self).__init__(**kwargs)
         self.search_fields = fields
 
-    def search(self, query, fields=None, mode='AUTO'):
+    def get_query_set(self, query, columns, mode):
+        '''
+        Returns the query set for the columns and search mode.
+        '''
+        # Create the WHERE MATCH() ... AGAINST() expression.
+        fulltext_columns = ', '.join(columns)
+        where_expression = ('MATCH({}) AGAINST("%s" {})'.format(fulltext_columns, mode))
+
+        # Get query set via extra() method.
+        return self.extra(where=[where_expression], params=[query])
+
+    def search(self, query, fields=None, mode=None):
         '''
         Runs a fulltext search against the fields defined in the method's
         kwargs. If no fields are defined in the method call, then the fields
         defined in the constructor's kwargs will be used.
 
         Just define a query (the search term) and a fulltext search will be
-        executed. In case mode is set the "AUTO", the method will automatically
+        executed. In case mode is set to None, the method will automatically
         switch to "BOOLEAN" in case any boolean operators were found.
         Of course you can set the search mode to any type you want, e.g.
         "NATURAL LANGUAGE".
@@ -67,38 +78,34 @@ class SearchQuerySet(models.query.QuerySet):
         # We now have all the required informations to build the query with the
         # fulltext "MATCH(…) AGAINST(…)" WHERE statement. However, we also need
         # to conside the search mode. Thus, if the mode argument is set to
-        # "AUTO", we need to inspect the search query and enable the BOOLEAN
-        # mode in case any boolean operators were found. This is also a
-        # workaround for using at-signs (@) in search queries, because we don't
-        # enable the boolean mode in case no other operator was found.
+        # None, we need to inspect the search query and enable the BOOLEAN mode
+        # in case any boolean operators were found. This is also a workaround
+        # for using at-signs (@) in search queries, because we don't enable the
+        # boolean mode in case no other operator was found.
         #
 
-        # Set boolean mode if mode argument is set to "AUTO".
-        if mode.upper() == 'AUTO' and any(x in query for x in '+-><()*"'):
+        # Set boolean mode if mode argument is set to None.
+        if mode is None and any(x in query for x in '+-><()*"'):
             mode = 'BOOLEAN'
 
-        # Add the "IN … MODE" words to the statement.
+        # Convert the mode into a valid "IN … MODE" or empty string.
         if mode is None:
             mode = ''
         else:
-            mode = ' IN {} MODE'.format(mode)
+            mode = 'IN {} MODE'.format(mode)
 
-        # Create the WHERE MATCH() ... AGAINST() expression.
-        fulltext_columns = ', '.join(columns)
-        where_expression = ('MATCH({}) AGAINST("%s"{})'.format(fulltext_columns, mode))
-
-        # Get queryset via extra() method.
-        queryset = self.extra(where=[where_expression], params=[query])
+        # Get the query set.
+        query_set = self.get_query_set(query, columns, mode)
 
         #
         # If related fields were involved we've to select them as well.
         #
 
         if related_fields:
-            queryset = queryset.select_related(','.join(related_fields))
+            query_set = query_set.select_related(','.join(related_fields))
 
-        # Return queryset.
-        return queryset
+        # Return query_set.
+        return query_set
 
     def count(self):
         ''' Returns the count database records. '''
@@ -120,17 +127,19 @@ class SearchManager(models.Manager):
     SearchManager which supports MySQL and MariaDB full-text search.
     '''
 
+    query_set = SearchQuerySet
+
     def __init__(self, fields=None):
         super(SearchManager, self).__init__()
         self.search_fields = fields
 
     def get_query_set(self):
         '''
-        Returns the queryset.
+        Returns the query_set.
         '''
-        return SearchQuerySet(model=self.model, fields=self.search_fields)
+        return self.query_set(model=self.model, fields=self.search_fields)
 
-    def search(self, query, fields=None, mode='AUTO'):
+    def search(self, query, **kwargs):
         '''
         Runs a fulltext search against the fields defined in the method's kwargs
         or in the constructor's kwargs.
@@ -138,4 +147,4 @@ class SearchManager(models.Manager):
         For more informations read the documentation string of the
         SearchQuerySet's search() method.
         '''
-        return self.get_query_set().search(query, fields, mode)
+        return self.get_query_set().search(query, **kwargs)
