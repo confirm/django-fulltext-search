@@ -34,7 +34,6 @@ class SearchQuerySet(models.query.QuerySet):
         Of course you can set the search mode to any type you want, e.g.
         "NATURAL LANGUAGE".
         '''
-
         #
         # Get all requried attributes and initialize our empty sets.
         #
@@ -53,7 +52,7 @@ class SearchQuerySet(models.query.QuerySet):
         # are stored in the related model itself.
         #
 
-        fields = self.search_fields if fields == None else fields
+        fields = self.search_fields if not fields else fields
 
         for field in fields:
 
@@ -108,7 +107,9 @@ class SearchQuerySet(models.query.QuerySet):
         return query_set
 
     def count(self):
-        ''' Returns the count database records. '''
+        '''
+        Returns the count database records.
+        '''
         #
         # We need to overwrite the default count() method. Unfortunately
         # Django's internal count() method will clone the query object and then
@@ -135,7 +136,7 @@ class SearchManager(models.Manager):
 
     def get_query_set(self):
         '''
-        Returns the query_set.
+        Returns the query set.
         '''
         return self.query_set(model=self.model, fields=self.search_fields)
 
