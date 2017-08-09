@@ -1,5 +1,5 @@
 ===============================
-django_fulltext_search
+Django Fulltext Search
 ===============================
 
 .. image:: https://badge.fury.io/py/django-fulltext-search.png
