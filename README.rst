@@ -1,15 +1,19 @@
-Django Fulltext Search
-======================
+===============================
+django_fulltext_search
+===============================
+
+.. image:: https://badge.fury.io/py/django-fulltext-search.png
+    :target: http://badge.fury.io/py/django_fulltext_search
+
+.. image:: https://travis-ci.org/confirm/django-fulltext-search.png?branch=master
+        :target: https://travis-ci.org/confirm/django_fulltext_search
+
+.. image:: https://pypip.in/d/django-fulltext-search/badge.png
+        :target: https://pypi.python.org/pypi/django_fulltext_search
 
 This repository provides a Python library for [Django](https://www.djangoproject.com/) which supports native full-text search capabilities for [MySQL](https://dev.mysql.com/doc/refman/5.6/en/fulltext-search.html) and [MariaDB](https://mariadb.com/kb/en/mariadb/fulltext-index-overview/).
 
 Django already [supports boolean full-text searches](https://docs.djangoproject.com/en/dev/ref/models/querysets/#search). However, with the integrated full-text search support you can only search one single column and IMHO there's currently no way to search over multiple columns.
-
-Installation
-------------
-
-Download the [fulltext Python library](fulltext.py) and copy it to your existing Django project.
-I recommend you install it into your project directory next to `settings.py`.
 
 Add fulltext index
 ------------------
@@ -21,26 +25,26 @@ Unfortunately Djangos' [native migrations](https://docs.djangoproject.com/en/1.9
 
 However, you can easily create your own migration by starting with an empty one:
 
-```bash
+``bash
 ./manage.py makemigrations --empty customer
-```
+``
 
 Open the created migration file and add a [RunSQL command](https://docs.djangoproject.com/en/1.9/ref/migration-operations/#runsql) to the `operations` list:
 
-```python
+``python
 operations = [
     migrations.RunSQL(
         ('CREATE FULLTEXT INDEX customer_fulltext_index ON customer_customer (first_name, last_name)',),
         ('DROP INDEX customer_fulltext_index on customer_customer',)
     )
 ]
-```
+``
 
 Then migrate the database:
 
-```bash
+``bash
 ./manage.py migrate
-```
+``
 
 Update your model
 -----------------
@@ -63,9 +67,9 @@ class Customer(models.Model):
 
 As you can see, you can create the `SearchManager()` with a **list of by default searchable fields**. This means you don't have to bother about the field names later when you search your model. However, if you don't want to specify default fields you can also create the `SearchManager()` object without any arguments:
 
-```python
+``python
 objects = SearchManager()
-```
+``
 
 Search
 ------
@@ -102,6 +106,6 @@ Related models
 
 If you want to search a related models' field (e.g. `models.ForeignKey`) you can also use the `__` syntax:
 
-```python
+``python
 SearchManager(['customer__first_name', 'customer__last_name'])
-```
+``

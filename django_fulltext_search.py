@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from django.db import models, connection
 
+__author__ = 'Dominique Barton'
+__email__ = 'contactus@confirm.ch'
+__version__ = '0.1.0'
+
 
 class SearchQuerySet(models.query.QuerySet):
     '''
