@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models, connection
 
-__author__ = 'Dominique Barton'
+__author__ = 'confirm IT solutions'
 __email__ = 'contactus@confirm.ch'
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 
 class SearchQuerySet(models.query.QuerySet):
@@ -63,10 +63,10 @@ class SearchQuerySet(models.query.QuerySet):
             # Handling fields with a related model.
             if seperator in field:
                 field, rfield = field.split(seperator)
-                rmodel        = meta.get_field(field, many_to_many=False).related_model
+                rmodel        = meta.get_field(field).related_model
                 rmeta         = rmodel._meta
                 table         = rmeta.db_table
-                column        = rmeta.get_field(rfield, many_to_many=False).column
+                column        = rmeta.get_field(rfield).column
                 related_fields.add(field)
 
             # Handle fields without a related model.
